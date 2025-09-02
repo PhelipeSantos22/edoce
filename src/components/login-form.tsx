@@ -6,22 +6,29 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Eye, EyeOff, Mail, Lock } from "lucide-react"
+import { loginUser } from "@/utils/api/user"
+import { useMutation } from "@tanstack/react-query";
+
 
 export default function LoginForm(){
-const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [result, setResult] = useState<{
+    success: boolean
+    message: string 
+  } | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    console.log("Login attempt:", { email, password })
-    setIsLoading(false)
-  }
+  const mutation = useMutation({
+    mutationKey: ["login"],
+    mutationFn: async (formData: FormData) => {
+      setIsLoading(true)
+     const loginResponse = await loginUser(formData)
+      setResult(loginResponse)
+    },
+    onSuccess: () => {
+      setIsLoading(false)
+    }
+  });
 
   return (
     <Card className="border-border/50 shadow-lg">
@@ -30,7 +37,7 @@ const [showPassword, setShowPassword] = useState(false)
         <p className="text-sm text-muted-foreground text-center">Entre na sua conta para gerenciar sua loja</p>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form action={mutation.mutate} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium">
               Email
@@ -40,9 +47,8 @@ const [showPassword, setShowPassword] = useState(false)
               <Input
                 id="email"
                 type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                name="email"
+                placeholder="Digite seu email"
                 className="pl-10 bg-input border-border focus:ring-ring"
                 required
               />
@@ -57,10 +63,9 @@ const [showPassword, setShowPassword] = useState(false)
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="password"
+                name="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Sua senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Digite sua senha"
                 className="pl-10 pr-10 bg-input border-border focus:ring-ring"
                 required
               />
@@ -94,6 +99,17 @@ const [showPassword, setShowPassword] = useState(false)
             {isLoading ? "Entrando..." : "Entrar"}
           </Button>
         </form>
+        {result && (
+              <div
+                className={`mt-4 p-3 rounded-lg text-sm ${
+                  result.success
+                    ? "bg-green-50 border border-green-200 text-green-800"
+                    : "bg-red-50 border border-red-200 text-red-800"
+                }`}
+              >
+                {result.message}
+              </div>
+            )}
       </CardContent>
     </Card>
   )
