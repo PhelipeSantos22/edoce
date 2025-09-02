@@ -7,8 +7,6 @@ export async function loginUser(formData: FormData) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
-  const cookieStore = await cookies()
-
   const data = await fetch(`${process.env.API_URL}/login`, {
     method: "POST",
     headers: {
@@ -26,7 +24,7 @@ export async function loginUser(formData: FormData) {
         message: error.message
       }
     })
-
+  
   if (!data?.success) {
     return {
       success: false,
@@ -34,14 +32,16 @@ export async function loginUser(formData: FormData) {
     }
   }
 
+  const cookieStore = await cookies()
+  
   // Em produção, usar JWT com secret seguro
-  const sessionToken = JSON.stringify(data.data)
+  const sessionToken = JSON.stringify({ token: data.token })
 
   cookieStore.set("edoce-session", sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: 60 * 60 * 24, // 1 dia
+    maxAge: 60 * 60 * 24,
   })
 
   redirect("/dashboard")
